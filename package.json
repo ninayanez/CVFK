@@ -1,8 +1,8 @@
 {
-  "name": "niiinyanz",
+  "name": "pnk",
   "version": "1.0.0",
-  "description": "tumblr",
-  "main": "index.js",
+  "description": "",
+  "main": "pnk.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,5 +12,6 @@
     "through2": "^2.0.0",
     "tumblr.js": "0.0.5",
     "underscore": "^1.8.3"
-  }
+  },
+  "devDependencies": {}
 }

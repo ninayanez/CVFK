@@ -16,31 +16,51 @@ body
   background rgba(95, 238, 241, 0.27)
   padding 0px 6px
   width  320px
+  position fixed
+  left 50%
+  top 50%
+  margin-left -160px
+  margin-top -40px
+  transition opacity 0.15s linear
+
 
 #prompt input 
   outline  none
   color blue
+  background rgba(95, 238, 241, 0.27)
+  font-size 12px
   font-family monaco!important
-  font-size  12px
-  border  1px solid rgba(38, 182, 253, 0.91)
-  border-radius  3px
-  background  rgba(95, 238, 241, 0.27)
-  letter-spacing  1.8px
+  border 1px solid rgba(38, 182, 253, 0.91)
+  letter-spacing 1.8px
+  border-radius 3px
   border none
-  background transparent
 
 #prompt input:focus 
   outline none
   border none
 
 #prompt span 
-  margin-left 20px
-  color black
+  position absolute
+  background #FF8080
+  width 320px
+  height inherit
+  padding 0 6px
+  margin-left -6px
+  color #77086D
+  opacity 0
+  transition display,opacity 0.15s linear
 
-#prompt 
-  position fixed
-  left 50%
-  top 50%
-  margin-left -210px
-  margin-top -40px
-  transition opacity 0.15s linear
+#prompt ul, #prompt ul li
+  margin 0
+  padding 0
+  list-style none
+
+#prompt ul li 
+  float left
+  clear both
+  padding 0 6px
+
+#prompt ul li.selected
+  border-radius 4px
+  background rgba(19, 7, 103, 0.3)
+  color white

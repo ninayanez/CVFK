@@ -8,7 +8,8 @@ git clone https://github.com/ninayanez/rosario.git
 
 #### To Build:
 ```
-cd rosario && make
+cd rosario 
+make
 ```
 
 #### To Run:

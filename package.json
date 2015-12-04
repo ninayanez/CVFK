@@ -1,13 +1,12 @@
 {
-  "name": "pnk",
+  "name": "rosario",
   "version": "1.0.0",
   "description": "",
-  "main": "pnk.js",
-  "build": "babel lib --out-dir dist",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "nina yañez",
   "license": "ISC",
   "dependencies": {
     "through2": "^2.0.0",

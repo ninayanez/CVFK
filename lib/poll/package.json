@@ -1,7 +1,7 @@
 {
-  "name": "tumblr",
+  "name": "poll",
   "version": "1.0.0",
-  "description": "tumblr api interface",
+  "description": "simple polling utility",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,9 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "through2": "^2.0.0",
-    "tumblr.js": "0.0.5",
-    "underscore": "^1.8.3"
+    "through2": "^2.0.0"
   },
   "devDependencies": {}
 }

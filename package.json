@@ -16,6 +16,7 @@
   "devDependencies": {
     "babel-cli": "^6.2.0",
     "electron-prebuilt": "^0.35.1",
-    "electron-rebuild": "^1.0.2"
+    "electron-rebuild": "^1.0.2",
+    "stylus": "^0.52.4"
   }
 }

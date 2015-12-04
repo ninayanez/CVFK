@@ -8,7 +8,7 @@ function init () {
     width : 1440,
     height : 900
   })
-  mainWindow.loadURL('file://' + __dirname + '/pnk.html')
+  mainWindow.loadURL('file://' + __dirname + '/index.html')
   mainWindow.on('closed', function() { mainWindow = null })
   // mainWindow.openDevTools()
 }

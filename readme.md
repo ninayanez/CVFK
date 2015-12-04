@@ -1,7 +1,7 @@
 #### Dependencies:
 nodejs should be installed.
 
-_not working with node v5 yet_ :sob:
+_not working with node v5 yet_ :sob: _..please use node v4_ :see_no_evil:
 
 #### To Install:
 ```

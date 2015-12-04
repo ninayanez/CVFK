@@ -85,11 +85,25 @@ ul.print
   width 200px
   height 225px
   border-radius 3px
-  border 1px solid rgba(0, 0, 255, 0.33)
-  background rgba(255, 255, 255, 0.63)
+  border 1px solid rgba(0, 0, 0, 0.33)
+  background rgba(255, 221, 233, 0.8)
   margin 0
   padding 0
   overflow scroll
+
+.print::-webkit-scrollbar 
+  width 3px 
+  height 3px
+
+.print::-webkit-scrollbar-button 
+  background-color #666
+
+.print::-webkit-scrollbar-track 
+  background-color: #999;}
+.print::-webkit-scrollbar-track-piece { background-color: #ffffff;}
+.print::-webkit-scrollbar-thumb { height: 50px; background-color: #666; border-radius: 3px;}
+.print::-webkit-scrollbar-corner { background-color: #999;}}
+.print::-webkit-resizer { background-color: #666;}jjj
 
 ul.print li
   margin 0

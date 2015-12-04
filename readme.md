@@ -2,13 +2,17 @@
 nodejs should be installed (currently not working with node ^v5.0.0) 
 
 #### To Install:
-`git clone https://github.com/ninayanez/rosario.git`
+```
+git clone https://github.com/ninayanez/rosario.git
+```
 
 #### To Build:
-```bash
-cd rosario 
-make
+```
+cd rosario && make
 ```
 
 #### To Run:
-`make run`
+```
+make run
+```
+

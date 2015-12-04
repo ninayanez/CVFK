@@ -1,11 +1,22 @@
-all: 
-	css
-	es6
+all :
+	make deps
+	make rebuild
+	make build
+	make css
 
-es6:
-	[-d dist] && echo 'BUILD' || mkdir dist && echo 'BUILD'
+build : 
+	mkdir -p dist
 	rsync -av lib/ dist
 	node_modules/.bin/babel lib --out-dir dist
 
-css:
+css :
 	node_modules/.bin/stylus s.styl
+
+deps : 
+	npm i
+
+rebuild :
+	node_modules/.bin/electron-rebuild -v $(shell node_modules/.bin/electron -v | cut -d 'v' -f 2)
+
+run :
+	node_modules/.bin/electron .

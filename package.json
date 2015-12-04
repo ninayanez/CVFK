@@ -1,8 +1,9 @@
 {
   "name": "rosario",
   "version": "1.0.0",
-  "description": "",
+  "description": "visual programming environment",
   "main": "index.js",
+  "repository": "https://github.com/ninayanez/rosario",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -1,16 +1,8 @@
-LAYERS
-  app
-    - load core modules & init
+#### Dependencies
+nodejs should be installed (currently not working with node ^v5.0.0) 
 
-  api
-    - pipeable command filter
-    - database access
+#### To Build:
+`make all`
 
-  canvas
-    - paperjs ui
-    - pipe to api
-
-  process
-    - api pipe to process
-    - load & run modules
-
+#### To Run:
+`make run`

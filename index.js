@@ -1,7 +1,11 @@
-var app = require('app')
+// i love you Chavela Vargas. i love you Frida Kahlo.
+
 var BrowserWindow = require('browser-window')
+var app = require('app')
 var mainWindow
+
 require('crash-reporter').start()
+
 function init () {
   mainWindow = new BrowserWindow({
     'auto-hide-menu-bar' : true,
@@ -12,7 +16,9 @@ function init () {
   mainWindow.on('closed', function() { mainWindow = null })
   // mainWindow.openDevTools()
 }
+
 app.on('window-all-closed', function() {
   if (process.platform != 'darwin') app.quit() 
 })
+
 app.on('ready', init)

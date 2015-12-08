@@ -1,5 +1,5 @@
 #### Dependencies:
-nodejs v4* or LTS :see_no_evil:
+nodejs v4.2.2
 
 #### To Install:
 ```

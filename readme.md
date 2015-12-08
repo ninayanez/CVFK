@@ -3,12 +3,12 @@ nodejs v4* or LTS :see_no_evil:
 
 #### To Install:
 ```
-git clone https://github.com/ninayanez/rosario.git
+git clone https://github.com/ninayanez/CVFK.git
 ```
 
 #### To Build:
 ```
-cd rosario 
+cd CVFK 
 make
 ```
 

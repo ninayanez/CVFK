@@ -1,16 +1,15 @@
 // i love you Chavela Vargas. i love you Frida Kahlo.
 
-var BrowserWindow = require('browser-window')
-var app = require('app')
+var electron = require('electron')
+var BrowserWindow = electron.BrowserWindow
+var app = electron.app
 var mainWindow
-
-require('crash-reporter').start()
 
 function init () {
   mainWindow = new BrowserWindow({
     'auto-hide-menu-bar' : true,
-    width : 1440,
-    height : 900
+    width : 800,
+    height : 600
   })
   mainWindow.loadURL('file://' + __dirname + '/index.html')
   mainWindow.on('closed', function() { mainWindow = null })

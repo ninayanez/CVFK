@@ -1,24 +1,23 @@
 import _ from 'underscore'
 import through from 'through2'
-import level from 'level'
 import modList from './moduleList.js'
 
-let database = level('./data') // mockup !?
 let ml = modList()
 let sketch = null
-let proc = {}
+let modules = {}
 
-let s = through.obj((d,e,n) => { 
+// load module 
+const s = through.obj((d,e,n) => { 
   if (typeof d === 'string') return // for now
   sketch = d 
   if (!d.edit) update()
-  else if (d.edit&&proc[d.edit]) proc[d.edit].edit(d)
+  else if (d.edit&&modules[d.edit]) modules[d.edit].edit(d)
   n()
 })
 
 function update () { // compare && load/unload or pipe/unpipe
-  _.each(proc, (v,k) => { if (!sketch[k]) rm(k) })
-  _.each(sketch, (v,k) => { if (!proc[k]) add(k) })
+  _.each(modules, (v,k) => { if (!sketch[k]) rm(k) })
+  _.each(sketch, (v,k) => { if (!modules[k]) add(k) })
 }
 
 function add (cid) { // pass second arg to constructor
@@ -27,28 +26,28 @@ function add (cid) { // pass second arg to constructor
     if (ml[name]) {
       let idx = './'+name+'/'+ml[name].main
       let m = require(idx)
-      proc[cid] = new m({id:cid})
+      modules[cid] = new m({id:cid})
     }
   } else { // pipe
-    proc[cid] = sketch[cid]
+    modules[cid] = sketch[cid]
     let a = sketch[cid].o
     let b = sketch[cid].i
-    if (proc[a]&&proc[b])
-      proc[a].s.pipe(proc[b].s)
+    if (modules[a]&&modules[b])
+      modules[a].io.pipe(modules[b].io)
   }
 }
 
 function rm (cid) {
-  if (proc[cid].s) {
-    proc[cid].s.unpipe()
-    proc[cid].s.destroy()
-    delete proc[cid]
+  if (modules[cid].s) {
+    modules[cid].io.unpipe()
+    modules[cid].io.destroy()
+    delete modules[cid]
   } else { // unpipe
-    let a = proc[cid].o
-    let b = proc[cid].i
-    if (proc[a]&&proc[b])
-      proc[a].s.unpipe(proc[b].s)
-    delete proc[cid]
+    let a = modules[cid].o
+    let b = modules[cid].i
+    if (modules[a]&&modules[b])
+      modules[a].io.unpipe(modules[b].io)
+    delete modules[cid]
   }
 }
 

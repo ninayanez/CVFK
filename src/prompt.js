@@ -5,7 +5,7 @@ import modList from './moduleList.js'
 const ml = modList()
 const stream = through()
 const mousePos = {x:0, y:0}
-const bodyFocus = false
+let bodyFocus = false
 
 const prompt = document.createElement('div')
 const input = document.createElement('input')
@@ -21,11 +21,12 @@ function visible (show) {
   if (!show) { document.body.focus(); return }
   prompt.style.left = mousePos.x 
   prompt.style.top = mousePos.y 
-  prompt.value = ''
+  input.value = ''
+  input.focus()
 }
 
 function search (name) {
-  const result = _.findKey(ml, name.toLowerCase())
+  const result = _.findKey(ml, name)
   if (result) return result
   else return false
 }
@@ -36,17 +37,23 @@ window.addEventListener('mousemove', (e) => {
 }, false)
 
 window.addEventListener('keydown', (e) => {
-  if (e.key==='n' && focus) visible(true)
+  if (e.key==='n' && focus) {e.preventDefault(); visible(true) }
 }, false)
 
 input.addEventListener('keydown', (e) => {
   if (e.key==='Esc') visible(false)
   if (e.key==='Tab') {
+    console.log(input.value)
+    _.keys(ml, (k) => { 
+      console.log(k)
+      console.log(input.value.match(k))
+      if (k.match(input.value)) input.value = k 
+    })
     e.preventDefault()
-    _.keys(ml, (k) => { if (k.match(input.value)) input.value = k })
   }
   if (e.key==='Enter') {
-    const result = search(input.value)
+    const val = input.value.toLowerCase()
+    const result = search(val)
     if (!search) { input.value = ''; return }
     stream.push(result)
     visible(false)

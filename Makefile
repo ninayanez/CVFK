@@ -6,8 +6,8 @@ all :
 
 build : 
 	mkdir -p dist
-	rsync -av lib/ dist
-	node_modules/.bin/babel lib --out-dir dist
+	rsync -av src/ dist
+	node_modules/.bin/babel src --out-dir dist
 
 css :
 	node_modules/.bin/stylus s.styl

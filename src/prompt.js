@@ -2,116 +2,55 @@ import _ from 'underscore'
 import through from 'through2'
 import modList from './moduleList.js'
 
-let ml = modList()
+const ml = modList()
+const stream = through()
+const mousePos = {x:0, y:0}
+const bodyFocus = false
 
-let history = {
-  idx : 0,
-  items : []
+const prompt = document.createElement('div')
+const input = document.createElement('input')
+prompt.appendChild(input)
+prompt.setAttribute('id','prompt')
+prompt.style.opacity = 0
+document.body.appendChild(prompt)
+
+function visible (show) {
+  prompt.style.opacity = (show) ? 1 : 0
+  prompt.style.zIndex = (show) ? 2 : -1
+  bodyFocus = (show) ? false : true
+  if (!show) { document.body.focus(); return }
+  prompt.style.left = mousePos.x 
+  prompt.style.top = mousePos.y 
+  prompt.value = ''
 }
 
-const errCode = '(҂⌣̀_⌣́) > '
-const BOX = document.createElement('div')
-const INPUT = document.createElement('input')
-const RES = document.createElement('ul')
-const ERR = document.createElement('span')
-BOX.appendChild(ERR)
-BOX.appendChild(INPUT)
-BOX.appendChild(RES)
-BOX.setAttribute('id','prompt')
-BOX.setAttribute('style','opacity:0;')
-document.body.appendChild(BOX)
-let prompt = {
-  _ : BOX,
-  s : through.obj(), 
-  visible : function (bool) {
-    function hide () { BOX.style.opacity = 0;BOX.style.zIndex='-1'}
-    function show () {
-      ml = modList() // recompile!
-      INPUT.value = null
-      BOX.style.zIndex = 2
-      BOX.style.opacity = 1
-      INPUT.focus()
-    }
-    if (typeof bool === 'object' && bool.x && bool.y) {
-      BOX.style.left = (bool.x)+'px'
-      BOX.style.top = (bool.y)+'px'
-      show()
-    } else if (bool===false) hide()
-    else if (bool===true) show()
-    else {
-      if (BOX.style.opacity==0) show()
-      else hide()
-    } 
-  },
-  glitch : function (str) {
-    ERR.innerHTML = errCode+str
-    ERR.style.opacity = 1
-    ERR.style.zIndex = 99
-  }
+function search (name) {
+  const result = _.findKey(ml, name.toLowerCase())
+  if (result) return result
+  else return false
 }
 
-INPUT.addEventListener('keydown', (e) => {
-  if (ERR.style.opacity==1) {
-    ERR.style.opacity = 0
-    ERR.style.zIndex = '-9'
-  } 
-  if ((e.keyCode===32&&e.ctrlKey)||e.keyCode===9) e.preventDefault()
-  if (e.keyCode===27) prompt.visible(false)
-  if (e.keyCode===13) {
-    history.idx++;
-    history.items.push(INPUT.value)
-    if (!searchModules(INPUT.value)) {
-      INPUT.value = null
-      prompt.glitch('ohhhh noooo')
-    } else if (searchModules(INPUT.value)) {
-      prompt.s.push(INPUT.value.toLowerCase())
-      prompt.visible(false)
-      INPUT.value = null
-    }
-  }
-  if (e.keyCode===40) { // UP : back in history
-    if (history.items.length === 0) return
-    history.idx++;
-    if (history.idx > (history.items.length-1)) 
-      history.idx = (history.items.length-1)
-    INPUT.value = history.items[history.idx]
-  }
-  if (e.keyCode===38) { // DOWN : forward in history
-    if (history.items.length === 0) return
-    history.idx--;
-    if (history.idx < 1) history.idx = 0
-    INPUT.value = history.items[history.idx]
-  }
+window.addEventListener('mousemove', (e) => {
+  mousePos.x = e.pageX + 'px'
+  mousePos.y = e.pageY +'px'
 }, false)
 
-INPUT.addEventListener('keyup', (e) => {
-  if (e.keyCode===27||e.keyCode===13||(e.keyCode===32&&e.ctrlKey)) return 
-  if (e.keyCode===9) { // iterate over RES list
+window.addEventListener('keydown', (e) => {
+  if (e.key==='n' && focus) visible(true)
+}, false)
+
+input.addEventListener('keydown', (e) => {
+  if (e.key==='Esc') visible(false)
+  if (e.key==='Tab') {
     e.preventDefault()
-    let sel = document.querySelector('.selected')
-    if (!sel||!sel.nextSibling) {
-      if (sel===RES.lastChild) RES.lastChild.setAttribute('class','')
-      RES.firstChild.setAttribute('class','selected')
-      INPUT.value = RES.firstChild.innerHTML.split('<i>')[0].toLowerCase()
-    } else if (sel&&sel.nextSibling) {
-      sel.setAttribute('class','')
-      sel.nextSibling.setAttribute('class','selected')
-      INPUT.value = sel.nextSibling.innerHTML.split('<i>')[0].toLowerCase()
-    }
-  } else searchModules(e.target.value)   
+    _.keys(ml, (k) => { if (k.match(input.value)) input.value = k })
+  }
+  if (e.key==='Enter') {
+    const result = search(input.value)
+    if (!search) { input.value = ''; return }
+    stream.push(result)
+    visible(false)
+  }
 }, false)
 
-function searchModules (txt) {
-  RES.innerHTML = ''
-  _.each(ml, (v,k) => {
-    if (k.match(txt)) {
-      const li = document.createElement('li')
-      li.innerHTML = k.toUpperCase() + '<i>  '+v.description+'</i>'
-      RES.appendChild(li)
-    }
-  })
-  if (RES.innerHTML == '') return false
-  else return true
-}
-
-export default prompt
+export default stream

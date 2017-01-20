@@ -1,7 +1,7 @@
 import _ from 'underscore'
 import fs from 'fs'
 
-const folder = fs.readdirSync('./lib')
+const folder = fs.readdirSync('./src')
 
 let moduleList = {}
 
@@ -9,7 +9,7 @@ let moduleList = {}
 
 export default function () {
   _.each(folder, (file) => { // load modules
-    const path = './lib/'+file
+    const path = './src/'+file
     const stat = fs.statSync(path)
     if (stat.isDirectory()) {
       if (fs.existsSync(path+'/package.json'))

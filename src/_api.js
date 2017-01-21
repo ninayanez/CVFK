@@ -1,19 +1,34 @@
 import _ from 'underscore'
 import through from 'through2'
-import modList from './moduleList.js'
+import modList from './_comp.js'
 
 let ml = modList()
-let sketch = null
 let modules = {}
+let activeProj = null
 
-// load module 
+// pass in constructor args! string after mod name
+// parse project quickly for state
+
 const s = through.obj((d,e,n) => { 
   if (typeof d === 'string') return // for now
-  sketch = d 
-  if (!d.edit) update()
-  else if (d.edit&&modules[d.edit]) modules[d.edit].edit(d)
+  parse(d)
+  // sketch = d 
+  // if (!d.edit) update()
+  // else if (d.edit&&modules[d.edit]) modules[d.edit].edit(d)
   n()
 })
+
+function parse (proj) {
+  _.each(proj.layers, (l, i) => {
+    _.each(l.children, useItem)
+  })
+}
+
+// find difference
+
+function useItem (item) {
+
+}
 
 function update () { // compare && load/unload or pipe/unpipe
   _.each(modules, (v,k) => { if (!sketch[k]) rm(k) })

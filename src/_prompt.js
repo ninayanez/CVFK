@@ -3,7 +3,7 @@ import through from 'through2'
 import modList from './moduleList.js'
 
 const ml = modList()
-const stream = through()
+const stream = through.obj()
 const mousePos = {x:0, y:0}
 let bodyFocus = false
 
@@ -25,12 +25,6 @@ function visible (show) {
   input.focus()
 }
 
-function search (name) {
-  const result = _.findKey(ml, name)
-  if (result) return result
-  else return false
-}
-
 window.addEventListener('mousemove', (e) => {
   mousePos.x = e.pageX + 'px'
   mousePos.y = e.pageY +'px'
@@ -43,19 +37,15 @@ window.addEventListener('keydown', (e) => {
 input.addEventListener('keydown', (e) => {
   if (e.key==='Esc') visible(false)
   if (e.key==='Tab') {
-    console.log(input.value)
-    _.keys(ml, (k) => { 
-      console.log(k)
-      console.log(input.value.match(k))
+    _.each(_.keys(ml), (k) => { 
       if (k.match(input.value)) input.value = k 
     })
     e.preventDefault()
   }
   if (e.key==='Enter') {
     const val = input.value.toLowerCase()
-    const result = search(val)
-    if (!search) { input.value = ''; return }
-    stream.push(result)
+    if (!ml[val]) { input.value = ''; return }
+    stream.push(val)
     visible(false)
   }
 }, false)

@@ -1,7 +1,8 @@
 import cuid from 'cuid'
-import p from './paper.js'
+import p from 'paper'
 import _ from 'underscore'
 import through from 'through2'
+import prompt from './_prompt.js'
 
 const CVS = document.getElementById('cvs')
 CVS.height = window.innerHeight
@@ -9,10 +10,13 @@ CVS.width = window.innerWidth
 
 p.setup(CVS)
 
-// edit colors --- save scheme
-// interface override --- load/expose editor
+let activeMouse = [100,60]
+let activeCord = false
+let layerSelected = new p.Layer({position : p.view.center})
+let layerDefault = p.project.layers[0]
+layerDefault.activate()
 
-let selection = new p.Path.Rectangle({
+const selection = new p.Path.Rectangle({
   name : 'selection',
   fillColor : 'red',
   point : [100, 100],
@@ -21,16 +25,9 @@ let selection = new p.Path.Rectangle({
   visible : false
 })
 
-let mouse = [100,60]
-let sketch = {} 
-let cord = false
-let layerSelected = new p.Layer({position : p.view.center})
-let layerDefault = p.project.layers[0]
-layerDefault.activate()
-
 function makeBox (pos, name) {
   let txt = new p.PointText({
-    content : name.toUpperCase(),
+    content : name,
     fillColor : 'blue',
     fontSize : 11,
     fontFamily : 'Input Sans Condensed',
@@ -45,7 +42,7 @@ function makeBox (pos, name) {
 
   bg.position = txt.position
 
-  let output = new p.Path.RoundRectangle({
+  const outlet = new p.Path.RoundRectangle({
     center : [(bg.position.x+(bg.bounds.width/2))-5, bg.position.y+11],
     size : [10,6],
     fillColor : 'blue',
@@ -53,14 +50,13 @@ function makeBox (pos, name) {
     name : 'o'
   })
 
-  output.onMouseEnter = function (e) { 
-    hov.position = e.target.position
-    hov.visible = true
+  outlet.onMouseEnter = (e) => {
+    hov.position = e.target.position ;hov.visible = true
   }
-  output.onMouseLeave = function (e) { hov.visible = false }
-  output.onMouseDown = drawPatchLine
+  outlet.onMouseLeave = (e) => { hov.visible = false }
+  outlet.onMouseDown = makeCord
 
-  let input = new p.Path.Rectangle({
+  const inlet = new p.Path.Rectangle({
     center : [(bg.position.x-(bg.bounds.width/2))+5,bg.position.y-11],
     size : [10,6],
     fillColor : 'blue',
@@ -68,14 +64,14 @@ function makeBox (pos, name) {
     name : 'i'
   })
 
-  input.onMouseEnter = function (e) {
+  inlet.onMouseEnter = function (e) {
     hov.position = e.target.position
     hov.visible = true;
   }
 
-  input.onMouseLeave = function (e) { hov.visible = false; }
+  inlet.onMouseLeave = function (e) { hov.visible = false; }
 
-  let hov = new p.Path.Circle({
+  const hov = new p.Path.Circle({
     fillColor : 'red',
     center : [(bg.position.x+(bg.bounds.width/2)) - 4, bg.position.y + 9],
     radius : 12,
@@ -83,34 +79,37 @@ function makeBox (pos, name) {
     opacity : 0.3
   })
 
-  let box = new p.Group([bg,txt,hov,input,output])
+  const box = new p.Group([bg,txt,hov,inlet,outlet])
   box.position = new p.Point([pos[0]+(box.bounds.width/2),pos[1]])
   box.onMouseDown = dragBox
-  box.name = 'box:'+name+':'+cuid()
-
-  sketch[box.name] = {
+  box.name = cuid()
+  box.data = {
+    cid: box.name,
     name : name,
     i : false,
     o : false,
-    position : box.position
-  } 
+    position : box.position,
+    edit: false
+  }
 
-  s.push(sketch)
-
-  return box
+  push()
 }
 
-function drawPatchLine (e) {
-  cord = {name:'cord:'+cuid(),o:e.target.parent.name}
+function makeCord (e) {
   const pos = e.target.position
-  let line = new p.Path.Line({
+  const cord = new p.Path.Line({
     strokeColor : 'blue',
-    name : cord.name,
+    name : cuid(),
+    data : {
+      a : e.target.parent.name,
+      b : false
+    },
     from : pos, 
     to : pos
   })
+  activeCord = cord
   window.onmousemove = function (e) {
-    line.segments = [pos, [e.clientX-4, e.clientY-4]]
+    cord.segments = [pos, [e.clientX-4, e.clientY-4]]
     p.view.draw()
   }
 }
@@ -124,8 +123,8 @@ function moveBox (item, origin) {
     }
   }
 
-  let i = getItem(sketch[cid].i)
-  let o = getItem(sketch[cid].o)
+  let i = item.data.i
+  let o = item.data.o
 
   if (i) 
     off.i = { 
@@ -150,12 +149,11 @@ function moveBox (item, origin) {
     ]
     item.position = [e.clientX+off.box.x,e.clientY+off.box.y]
     p.view.draw()
-    sketch[item.name].position = item.position
   }
 }
 
 function dragBox (e) {
-  const item = e.target.parent
+  const item = e.target
   const origin = e.point
   let draw = []
 
@@ -193,34 +191,31 @@ function getItem (cid) {
 function deleteItem (cid) {
   let item = (typeof cid === 'string') ? getItem(cid) : cid
   if (typeof cid !== 'string') cid = item.name
+  if (item instanceof p.Group) { 
+    if (item.data.i) deleteItem(item.data.i)
+    if (item.data.o) deleteItem(item.data.o) 
+  }
+  if (item instanceof p.Path.Line) { // remove connections 
+    const inItem = getItem(item.i)
+    const outItem = getItem(item.o)
+    if (inItem) outItem.data.o = false
+    if (outItem) outItem.data.i = false
+  }
   item.remove()
-
-  if (cid.split(':')[0]==='cord') {
-    let inlet = sketch[sketch[cid].i]
-    let outlet = sketch[sketch[cid].o]
-    if (outlet) outlet.o = false
-    if (inlet) inlet.i = false
-  }
-
-  if (cid.split(':')[0]==='box') {
-    if (sketch[cid].i && !layerSelected.children[sketch[cid].i]) 
-      deleteItem(sketch[cid].i)
-    if (sketch[cid].o && !layerSelected.children[sketch[cid].o]) 
-      deleteItem(sketch[cid].o)
-  }
-
-  delete sketch[cid]
-  s.push(sketch)
+  push()
 }
 
 let s = through.obj((d,e,n) => {
-  let id = cuid()
-  makeBox(mouse,d) 
+  makeBox(activeMouse,d) 
   p.view.draw()
   n()
 })
 
+prompt.pipe(s)
+
 export default s
+
+function push () { p.view.draw(); s.push(p.project) }
 
 // DOM EVENTS
 
@@ -292,23 +287,23 @@ function selectAll (bool) {
 
 function windowMouseUp (e) { // CANCEL MOUSEMOVES
   window.onmousemove = null 
-  var hit = p.project.hitTest([ e.clientX, e.clientY ])
-  if (hit && cord && (hit.item.name==='i'||hit.item.name==='o')) {
-    _.each(sketch, (v,k) => { if (v.i===cord.name) deleteItem(v.i) })
-    sketch[cord.name] = {o:cord.o,i:hit.item.parent.name}
-    sketch[hit.item.parent.name].i = cord.name
-    sketch[cord.o].o = cord.name
-    let patch = getItem(cord.name)
-    patch.segments = [
-      [patch.segments[0].point.x,patch.segments[0].point.y],
-      [hit.item.position.x, hit.item.position.y]
-    ]
-    cord = false
-    s.push(sketch)
-  } else {
-    if (cord) { deleteItem(cord.name); cord = false }
-    if (selection.visible) selection.visible = false
+  if (selection.visible) selection.visible = false
+  const hit = p.project.hitTest([ e.clientX, e.clientY ])
+  if (!activeCord) return
+  if (!hit || !hit.item.name==='i'){
+    deleteItem(activeCord)
+    activeCord=false
+    return
   }
+  activeCord.data.b = hit.item.parent.name
+  getItem(activeCord.data.a).data.o = activeCord.name
+  getItem(activeCord.data.b).data.i = activeCord.name
+  activeCord.segments = [
+    activeCord.segments[0].point,
+    [hit.item.position.x, hit.item.position.y]
+  ]
+  activeCord = false
+  push()
   p.view.draw()
 }
 
@@ -324,10 +319,14 @@ function windowKeyDown (e) {
     selectAll(false)
   } else if (e.keyCode===68&&e.ctrlKey) {
     selectAll(true)
+  } else if (e.keyCode===69&&e.ctrlKey) {
+    if (CVS.style.display==='none') 
+      CVS.style.display = 'block'
+    else CVS.style.display = 'none'
   }
 }
 
-function canvasMouseMove (e) { mouse = [e.clientX,e.clientY] }
+function canvasMouseMove (e) { activeMouse = [e.clientX,e.clientY] }
 
 window.addEventListener('mouseup', windowMouseUp, false)
 window.addEventListener('keydown', windowKeyDown, false)

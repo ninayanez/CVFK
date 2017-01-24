@@ -2,11 +2,15 @@
 <html>
   <head>
     <link rel='stylesheet' href='s.css'>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.12.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.12.0/mapbox-gl.css' rel='stylesheet' />
   </head>
   <body>
     <canvas id='cvs'></canvas>
     <script>
-      require('./dist/app.js')
-    </script>
+      const ui = require('./dist/_ui.js')
+      const api = require('./dist/_api.js')
+      ui.pipe(api).pipe(ui)
+   </script>
   </body>
 </html>

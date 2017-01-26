@@ -12,10 +12,9 @@ p.setup(CVS)
 
 let activeMouse = [100,60]
 let activeCord = false
-let layerSelected = new p.Layer({position : p.view.center})
-let layerDefault = p.project.layers[0]
+const layerDefault = p.project.activeLayer
+const layerSelected = new p.Layer({position: p.view.center})
 layerDefault.activate()
-
 const selection = new p.Path.Rectangle({
   name : 'selection',
   fillColor : 'red',
@@ -81,7 +80,11 @@ function makeBox (pos, name) {
 
   const box = new p.Group([bg,txt,hov,inlet,outlet])
   box.position = new p.Point([pos[0]+(box.bounds.width/2),pos[1]])
-  box.onMouseDown = dragBox
+  box.onMouseDrag = dragBox
+  box.onMouseDown = (e) => { box.data.click = true }
+  box.onMouseUp = (e) => { 
+    if (box.data.click) s.push({id: box.name, event: e }) 
+  }
   box.name = cuid()
   box.data = {
     cid: box.name,
@@ -89,9 +92,8 @@ function makeBox (pos, name) {
     i : false,
     o : false,
     position : box.position,
-    edit: false
+    click: false
   }
-
   push()
 }
 
@@ -108,63 +110,42 @@ function makeCord (e) {
     to : pos
   })
   activeCord = cord
-  window.onmousemove = function (e) {
-    cord.segments = [pos, [e.clientX-4, e.clientY-4]]
-    p.view.draw()
-  }
-}
-
-function moveBox (item, origin) {
-  const cid = item.name
-  const off = { 
-    box : { 
-      x : item.position.x-origin.x, 
-      y : item.position.y-origin.y
-    }
-  }
-
-  let i = item.data.i
-  let o = item.data.o
-
-  if (i) 
-    off.i = { 
-      x : i.segments[1].point.x-origin.x, 
-      y : i.segments[1].point.y-origin.y
-    }
-
-  if (o) 
-    off.o = { 
-      x : o.segments[0].point.x-origin.x, 
-      y : o.segments[0].point.y-origin.y
-    }
-
-  return function (e) {
-    if (i) i.segments = [
-      [i.segments[0].point.x,i.segments[0].point.y],
-      [e.clientX+off.i.x,e.clientY+off.i.y]
-    ]
-    if (o) o.segments = [
-      [e.clientX+off.o.x,e.clientY+off.o.y],
-      [o.segments[1].point.x,o.segments[1].point.y],
-    ]
-    item.position = [e.clientX+off.box.x,e.clientY+off.box.y]
-    p.view.draw()
+  e.target.onMouseDrag = (ev) => {
+    e.target.parent.data.click = false
+    cord.segments = [pos, [ev.point.x-4, ev.point.y-4]]
   }
 }
 
 function dragBox (e) {
   const item = e.target
-  const origin = e.point
-  let draw = []
-
-  if (!item.name || e.target.name === 'o' || e.target.name === 'i') return
-  if (!(layerSelected.children[item.name])) draw.push(moveBox(item,origin)) 
-  else _.each(layerSelected.children, (c) => { 
-    if (!(c instanceof p.Group)) return
-    draw.push(moveBox(c,origin))
+  if (!item.name || item.name === 'o' || item.name === 'i') return
+  item.data.click = false
+  if (layerSelected.children[item.name]) {
+    _.each(layerSelected.children, (c) => {
+      if (c instanceof p.Path) {
+        if (!layerSelected.children[c.data.a] || 
+            !layerSelected.children[c.data.b]) {
+            const a = getItem(c.data.a).children['o']
+            const b = getItem(c.data.b).children['i']
+            c.segments = [a.position,b.position]
+        }
+      } else {
+        c.position.x += e.delta.x
+        c.position.y += e.delta.y
+      }
+    })
+  } else {
+    item.position.x += e.delta.x
+    item.position.y += e.delta.y
+  }
+  const conns = [item.data.i,item.data.o]
+  _.each(conns, (cordId) => {
+    if (!cordId) return
+    const cord = getItem(cordId)
+    const a = getItem(cord.data.a).children['o']
+    const b = getItem(cord.data.b).children['i']
+    cord.segments = [[a.position.x, a.position.y],[b.position.x,b.position.y]]
   })
-    
-  window.onmousemove = (ev) => { _.each(draw, (fn) => { fn(ev) }) }
 }
 
 function selectItem (item, bool) {
@@ -174,7 +155,7 @@ function selectItem (item, bool) {
   if (!(item instanceof p.Group)) 
     item.strokeColor = (bool) ? 'rgba(255,0,0,0.8)' : 'blue' 
   else {
-    item.children[0].fillColor = (bool)?'rgba(255,0,0,0.4)':'rgba(0,0,255,0.3)'
+    item.children[0].fillColor=(bool)?'rgba(255,0,0,0.4)':'rgba(0,0,255,0.3)'
     item.children[1].fillColor = (bool) ? 'rgba(0,0,0,0.6)' : 'blue'
     item.children[3].fillColor = (bool) ? 'rgba(255,0,0,0.8)' : 'blue'
     item.children[4].fillColor = (bool) ? 'rgba(255,0,0,0.8)' : 'blue'
@@ -221,59 +202,51 @@ function push () { p.view.draw(); s.push(p.project) }
 
 function canvasMouseDown (e) { // select
   const hit = p.project.hitTest([ e.clientX, e.clientY ])
-  if (e.ctrlKey) {
-    if (hit) {
-      s.push({ // EDIT
-        edit : hit.item.parent.name,
-        point : hit.item.parent.position
-      })
-    } else return 
-  } else if (hit) return
+  // if (e.ctrlKey&&hit) hit.item
+  if (hit) return
   selection.bringToFront()
-  selection.visible = true
   const c0 = [e.clientX, e.clientY] 
+  selection.visible = true
+  p.view.draw()
   window.onmousemove = function selects (ev) { // fix!!!! to shift add to sel
     const c3 = [ev.clientX, ev.clientY]
     const c1 = [(c3[0] - c0[0]) + c0[0], c0[1]]
     const c2 = [c0[0], (c3[1] - c0[1]) + c0[1]]
     selection.segments = [c0, c2, c3, c1]
     let selected = []
-    
     if (!e.shiftKey)
       _.each(layerDefault.children, (b) => { 
         if (checkSelected(b)) selected.push(b.name) 
       })
-
     if (e.shiftKey)
       _.each(layerSelected.children, (b) => {
         if (checkSelected(b)) selected.push(b.name)
       })
-
     _.each(selected, (cid) => {
       if (e.shiftKey) 
         selectItem(getItem(cid), false)
       if (!e.shiftKey)
         selectItem(getItem(cid), true)
     })
-
     p.view.draw()
   }
 }
 
 function checkSelected (item) {
-  if (item==selection) return
-  const sect = selection.intersects(item)
+  if (item==selection) return false
+  if (item instanceof p.Path) 
+    if (selection.intersects(item)) return true
   const inside = item.isInside(new p.Rectangle(
     [selection.bounds.x,selection.bounds.y],
     [selection.bounds.width,selection.bounds.height]
   ))
-  if (inside||sect) return true
+  if (inside) return true
   return false
 }
 
 function selectAll (bool) {
   let selects = []
-  if (bool) {
+  if (!bool) {
     _.each(layerSelected.children, (c) => { selects.push(c.name) })
     _.each(selects, (d) => { selectItem(d,false) })
   } else {
@@ -287,7 +260,12 @@ function selectAll (bool) {
 
 function windowMouseUp (e) { // CANCEL MOUSEMOVES
   window.onmousemove = null 
-  if (selection.visible) selection.visible = false
+  if (selection.visible) { // set selection rect!
+    const segs = [e.pageX, e.pageY]
+    selection.segments = [segs,segs,segs,segs]
+    selection.visible = false
+    p.view.draw()
+  }
   const hit = p.project.hitTest([ e.clientX, e.clientY ])
   if (!activeCord) return
   if (!hit || !hit.item.name==='i'){
@@ -309,26 +287,23 @@ function windowMouseUp (e) { // CANCEL MOUSEMOVES
 
 function windowKeyDown (e) {
   const prompt = document.getElementById('prompt')
-  if (e.keyCode===8&&prompt.style.opacity==1) return
-  if (e.keyCode===8) {
+  if (e.key==='Backspace'&&prompt.style.opacity==1) return
+  if (e.key==='Backspace') {
     let toDelete = []
     _.each(layerSelected.children, (c) => { toDelete.push(c.name) })
     _.each(toDelete, deleteItem)
     p.view.draw()
-  } else if (e.keyCode===65&&e.ctrlKey) {
-    selectAll(false)
-  } else if (e.keyCode===68&&e.ctrlKey) {
-    selectAll(true)
-  } else if (e.keyCode===69&&e.ctrlKey) {
-    if (CVS.style.display==='none') 
-      CVS.style.display = 'block'
-    else CVS.style.display = 'none'
-  }
+  } 
+  if (e.key==='a'&&e.ctrlKey) selectAll(true)
+  if (e.key==='d'&&e.ctrlKey) selectAll(false)
 }
+
+function windowDblClick (e) { console.log(e); selectAll(false) }
 
 function canvasMouseMove (e) { activeMouse = [e.clientX,e.clientY] }
 
 window.addEventListener('mouseup', windowMouseUp, false)
 window.addEventListener('keydown', windowKeyDown, false)
+window.addEventListener('dblclick', windowDblClick, false)
 CVS.addEventListener('mousedown', canvasMouseDown, false)
 CVS.addEventListener('mousemove', canvasMouseMove, false)

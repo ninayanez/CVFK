@@ -1,69 +1,61 @@
+import p from 'paper'
 import _ from 'underscore'
 import through from 'through2'
-import modList from './_comp.js'
+import comp from './_comp.js'
 
-let ml = modList()
-let modules = {}
-let activeProj = null
+const modules = comp()
+const sketch = {}
+let activeLayers = null
 
-// pass in constructor args! string after mod name
-// parse project quickly for state
+function parse (d, e, n) {
+  if (d.id&&d.event) { 
+    if (sketch[d.id].click) sketch[d.id].click(d.event) 
+    n()
+    return
+  } 
+  const proj = d 
+  const names = []
+  const items = (!proj.layers[1]) 
+    ? proj.layers[0].children 
+    : proj.layers[0].children.concat(proj.layers[1].children)
 
-const s = through.obj((d,e,n) => { 
-  if (typeof d === 'string') return // for now
-  parse(d)
-  // sketch = d 
-  // if (!d.edit) update()
-  // else if (d.edit&&modules[d.edit]) modules[d.edit].edit(d)
-  n()
-})
-
-function parse (proj) {
-  _.each(proj.layers, (l, i) => {
-    _.each(l.children, useItem)
+  _.each(items, (itm) => {
+    if (!itm.name||itm.name==='selection') return
+    names.push(itm.name)
+    if (!sketch[itm.name]) add(itm)
   })
+
+  const itemsToRemove = _.difference(_.keys(sketch), names)
+  _.each(itemsToRemove, (itm) => { rm(sketch[itm]) })
+
+  n()
 }
 
-// find difference
-
-function useItem (item) {
-
-}
-
-function update () { // compare && load/unload or pipe/unpipe
-  _.each(modules, (v,k) => { if (!sketch[k]) rm(k) })
-  _.each(sketch, (v,k) => { if (!modules[k]) add(k) })
-}
-
-function add (cid) { // pass second arg to constructor
-  if (cid.split(':')[0]==='box') {
-    const name =  sketch[cid].name
-    if (ml[name]) {
-      let idx = './'+name+'/'+ml[name].main
-      let m = require(idx)
-      modules[cid] = new m({id:cid})
+function add (item) { // pass second arg to constructor
+  if (!item.data) return
+  if (item instanceof p.Group) {
+    if (modules[item.data.name]) {
+      const modulePath='./'+item.data.name+'/'+modules[item.data.name].main
+      const module = require(modulePath)
+      sketch[item.name] = new module()
     }
-  } else { // pipe
-    modules[cid] = sketch[cid]
-    let a = sketch[cid].o
-    let b = sketch[cid].i
-    if (modules[a]&&modules[b])
-      modules[a].io.pipe(modules[b].io)
+  } else if (item instanceof p.Path.Line) {
+    sketch[item.name] = item.data
+    if (sketch[item.data.a] && sketch[item.data.b])
+      sketch[item.data.a].io.pipe(sketch[item.data.b].io)
   }
 }
 
-function rm (cid) {
-  if (modules[cid].s) {
-    modules[cid].io.unpipe()
-    modules[cid].io.destroy()
-    delete modules[cid]
-  } else { // unpipe
-    let a = modules[cid].o
-    let b = modules[cid].i
-    if (modules[a]&&modules[b])
-      modules[a].io.unpipe(modules[b].io)
-    delete modules[cid]
-  }
+function rm (item) {
+  if (item instanceof p.Path.Line) {
+    if (sketch[item.data.a]&&sketch[item.data.b])
+      sketch[item.data.a].io.unpipe(sketch[item.data.b].io)
+    delete sketch[item.name]
+  } else if (item instanceof p.Group) {
+    sketch[item.name].io.unpipe()
+    sketch[item.name].io.destroy()
+    delete sketch[item.name]
+  } 
 }
 
-export default s
+export default through.obj(parse)

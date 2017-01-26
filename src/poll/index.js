@@ -3,7 +3,6 @@ import through from 'through2'
 export default class Poll { 
   // how to expose an editing interface?
   // use json config to indicate params & expose externally
-  
   constructor (config) {
     let speed = 500
     let interval = null
@@ -20,6 +19,7 @@ export default class Poll {
     })
 
     this.io.on('pipe', () => { 
+      console.log('PIPE')
       interval = setInterval(() => {
         this.io.write('!')
       }, speed)
@@ -27,8 +27,6 @@ export default class Poll {
 
     this.io.on('close', () => { if (interval) clearInterval(interval) })
 
-    this.edit = (e) => { // launch editor // expose interface
-
-    }
+    this.click = (e) => { console.log('CLICK',e) }
   }
 }
